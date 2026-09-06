@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  darwin:
+    name: darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with: { go-version: stable }
+      # ⛔ SHOW THE FILES. The first form here was
+      # `gofmt -l . | tee /dev/stderr | (! read)`, which failed on the runner
+      # while printing NOTHING -- so the log said a format check failed and
+      # not what was wrong with which file. A check whose failure is unreadable
+      # is a check somebody disables.
+      - name: gofmt
+        shell: bash
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then
+            echo "::error::these files are not gofmt-clean:"
+            echo "$out"
+            gofmt -d $out
+            exit 1
+          fi
+          echo "gofmt clean"
+      - run: go vet ./...
+      - run: CGO_ENABLED=0 go build ./...
+      - run: CGO_ENABLED=0 go test -count=1 -coverprofile=cover.out ./...
+      # The gate is on the PORTABLE files. The transport cannot be covered
+      # without a headset on the runner, and a total-coverage number chosen to
+      # pass is not a standard.
+      - name: 100% coverage gate
+        shell: bash
+        run: |
+          go tool cover -func=cover.out \
+            | grep -vE '_(darwin|linux|windows|other)\.go:' \
+            | grep -v '^total:' > portable.txt || true
+          cat portable.txt
+          if [ ! -s portable.txt ]; then
+            echo "::error::no portable files were measured; the filter is wrong"; exit 1
+          fi
+          if grep -v '100\.0%' portable.txt; then
+            echo "::error::below 100% on the portable model (lines above)"; exit 1
+          fi
+      - run: CGO_ENABLED=1 go test -race -count=1 ./...
+
+  cross:
+    name: cross-build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { goos: linux,   goarch: amd64 }
+          - { goos: linux,   goarch: arm64 }
+          - { goos: darwin,  goarch: amd64 }
+          - { goos: windows, goarch: amd64 }
+          - { goos: windows, goarch: arm64 }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with: { go-version: stable }
+      - run: CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build ./...
+
+  stubs:
+    name: linux (the stub, and the model on it)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with: { go-version: stable }
+      - run: CGO_ENABLED=0 go test -count=1 ./...
