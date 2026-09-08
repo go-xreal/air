@@ -11,7 +11,7 @@ jobs:
     name: darwin
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with: { go-version: stable }
       # ⛔ SHOW THE FILES. The first form here was
@@ -63,7 +63,7 @@ jobs:
           - { goos: windows, goarch: amd64 }
           - { goos: windows, goarch: arm64 }
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with: { go-version: stable }
       - run: CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build ./...
@@ -72,7 +72,7 @@ jobs:
     name: linux (the stub, and the model on it)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with: { go-version: stable }
       - run: CGO_ENABLED=0 go test -count=1 ./...
