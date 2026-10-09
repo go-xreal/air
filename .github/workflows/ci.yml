@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
-        with: { go-version: 1.27.1 }
+        with: { go-version: 1.27.2 }
       # ⛔ SHOW THE FILES. The first form here was
       # `gofmt -l . | tee /dev/stderr | (! read)`, which failed on the runner
       # while printing NOTHING -- so the log said a format check failed and
@@ -65,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
-        with: { go-version: 1.27.1 }
+        with: { go-version: 1.27.2 }
       - run: CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build ./...
 
   stubs:
@@ -74,5 +74,5 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
-        with: { go-version: 1.27.1 }
+        with: { go-version: 1.27.2 }
       - run: CGO_ENABLED=0 go test -count=1 ./...
